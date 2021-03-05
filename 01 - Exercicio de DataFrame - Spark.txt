@@ -1,0 +1,270 @@
+PS E:\projetos\docker-bigdata> wsl -l -v
+  NAME                   STATE           VERSION
+* docker-desktop-data    Running         2
+  docker-desktop         Running         2
+  Ubuntu-20.04           Running         2
+
+PS E:\projetos\docker-bigdata> docker-compose up -d
+Starting database     ... done
+
+Starting spark        ... done
+Starting zookeeper    ... done
+Starting datanode     ... done
+Starting hbase-master              ... done
+Starting hive-metastore-postgresql ... done
+Starting hive_metastore            ... done
+Starting hive-server               ... done
+
+PS E:\projetos\docker-bigdata> docker ps
+CONTAINER ID   IMAGE                    COMMAND                  CREATED       STATUS                   PORTS                                                                NAMES
+67cb4f17e952   fjardim/hive             "entrypoint.sh /bin/…"   2 weeks ago   Up 7 minutes             0.0.0.0:10000->10000/tcp, 10002/tcp                                  hive-server
+b83cd191f81e   fjardim/hive             "entrypoint.sh /opt/…"   2 weeks ago   Up 7 minutes             10000/tcp, 0.0.0.0:9083->9083/tcp, 10002/tcp                         hive_metastore
+547ff3bd4208   fjardim/hive-metastore   "/docker-entrypoint.…"   2 weeks ago   Up 7 minutes             5432/tcp                                                             hive-metastore-postgresql
+66b516d9ac13   fjardim/datanode         "/entrypoint.sh /run…"   2 weeks ago   Up 7 minutes (healthy)   0.0.0.0:50075->50075/tcp                                             datanode
+38e9a1dfa26b   fjardim/hbase-master     "/entrypoint.sh /run…"   2 weeks ago   Up 7 minutes             16000/tcp, 0.0.0.0:16010->16010/tcp                                  hbase-master
+e66c5fa361c0   fjardim/zookeeper        "/bin/sh -c '/usr/sb…"   2 weeks ago   Up 7 minutes             22/tcp, 2888/tcp, 3888/tcp, 0.0.0.0:2181->2181/tcp                   zookeeper
+3f771c4580b8   fjardim/namenode_sqoop   "/entrypoint.sh /run…"   2 weeks ago   Up 7 minutes (healthy)   0.0.0.0:50070->50070/tcp                                             namenode
+b7e84749ed87   fjardim/mysql            "docker-entrypoint.s…"   2 weeks ago   Up 7 minutes             33060/tcp, 0.0.0.0:33061->3306/tcp                                   database
+9184af4111aa   fjardim/jupyter-spark    "/opt/docker/bin/ent…"   2 weeks ago   Up 7 minutes             0.0.0.0:4040-4043->4040-4043/tcp, 0.0.0.0:8889->8889/tcp, 8899/tcp   spark
+
+PS E:\projetos\docker-bigdata> docker exec -it namenode bash
+
+root@namenode:/# hdfs dfs -put /input/exercises-data/juros_selic/ /user/aluno/feliciani/data
+
+root@namenode:/# hdfs dfs -ls /user/aluno/feliciani/data
+Found 6 items
+drwxr-xr-x   - root supergroup          0 2021-03-02 17:09 /user/aluno/feliciani/data/COVID-19
+drwxr-xr-x   - root supergroup          0 2021-02-15 16:45 /user/aluno/feliciani/data/escola
+drwxr-xr-x   - root supergroup          0 2021-03-05 12:56 /user/aluno/feliciani/data/juros_selic
+drwxr-xr-x   - root supergroup          0 2021-02-21 17:25 /user/aluno/feliciani/data/nascimento
+-rw-r--r--   2 root supergroup          0 2021-02-15 17:36 /user/aluno/feliciani/data/test
+drwxr-xr-x   - root supergroup          0 2021-03-01 16:59 /user/aluno/feliciani/data/titles
+
+root@namenode:/# hdfs dfs -ls /user/aluno/feliciani/data/juros_selic
+Found 3 items
+-rw-r--r--   3 root supergroup       7954 2021-03-05 12:56 /user/aluno/feliciani/data/juros_selic/juros_selic
+-rw-r--r--   3 root supergroup      14621 2021-03-05 12:56 /user/aluno/feliciani/data/juros_selic/juros_selic.json
+-rw-r--r--   3 root supergroup      12900 2021-03-05 12:56 /user/aluno/feliciani/data/juros_selic/juros_selic.wsdl
+
+root@namenode:/# exit
+
+PS E:\projetos\docker-bigdata> docker exec -it spark bash
+
+root@spark:/# spark-shell
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+21/03/05 13:12:49 WARN spark.SparkConf: Note that spark.local.dir will be overridden by the value set by the cluster manager (via SPARK_LOCAL_DIRS in mesos/standalone/kubernetes and LOCAL_DIRS in YARN).
+Spark context Web UI available at http://spark:4040
+Spark context available as 'sc' (master = local[*], app id = local-1614949972629).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.4.1
+      /_/
+
+Using Scala version 2.11.12 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_201)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> val jurosDF = spark. ###################################################################### POSSO DAR TAB PARA VER AS OPÇÕES DE UTILIZAÇÃO
+baseRelationToDataFrame   conf              emptyDataFrame   implicits         range        sessionState   sql          streams   udf
+catalog                   createDataFrame   emptyDataset     listenerManager   read         sharedState    sqlContext   table     version
+close                     createDataset     experimental     newSession        readStream   sparkContext   stop         time
+
+scala> val jurosDF = spark.read. ################################################################# POSSO DAR TAB PARA VER AS OPÇÕES DE UTILIZAÇÃO
+csv   format   jdbc   json   load   option   options   orc   parquet   schema   table   text   textFile
+
+scala> val jurosDF = spark.read.json("/user/aluno/feliciani/data/juros_selic/juros_selic.json")
+jurosDF: org.apache.spark.sql.DataFrame = [data: string, valor: string]
+
+scala> jurosDF.printSchema
+root
+ |-- data: string (nullable = true)
+ |-- valor: string (nullable = true)
+
+scala> jurosDF.show(5)
++----------+-----+
+|      data|valor|
++----------+-----+
+|01/06/1986| 1.27|
+|01/07/1986| 1.95|
+|01/08/1986| 2.57|
+|01/09/1986| 2.94|
+|01/10/1986| 1.96|
++----------+-----+
+only showing top 5 rows
+
+
+scala> jurosDF.show(5,false) ################### FALSE MOSTRA O CAMPO POR COMPLETO, NO CASO ABAIXO NÃO TINHA OUTRAS INFORMAÇÕES PARA MOSTRAR
++----------+-----+
+|data      |valor|
++----------+-----+
+|01/06/1986|1.27 |
+|01/07/1986|1.95 |
+|01/08/1986|2.57 |
+|01/09/1986|2.94 |
+|01/10/1986|1.96 |
++----------+-----+
+only showing top 5 rows
+
+
+scala> jurosDF.count
+res3: Long = 393
+
+scala> val jurosDF10 = jurosDF.
+agg             count                           except             hint              map                 repartition            stat              unionAll
+alias           createGlobalTempView            exceptAll          inputFiles        mapPartitions       repartitionByRange     storageLevel      unionByName
+apply           createOrReplaceGlobalTempView   explain            intersect         na                  rollup                 summary           unpersist
+as              createOrReplaceTempView         explode            intersectAll      orderBy             sample                 take              where
+cache           createTempView                  filter             isEmpty           persist             schema                 takeAsList        withColumn
+checkpoint      crossJoin                       first              isLocal           printSchema         select                 toDF              withColumnRenamed
+coalesce        cube                            flatMap            isStreaming       queryExecution      selectExpr             toJSON            withWatermark
+col             describe                        foreach            javaRDD           randomSplit         show                   toJavaRDD         write
+colRegex        distinct                        foreachPartition   join              randomSplitAsList   sort                   toLocalIterator   writeStream
+collect         drop                            groupBy            joinWith          rdd                 sortWithinPartitions   toString
+collectAsList   dropDuplicates                  groupByKey         limit             reduce              sparkSession           transform
+columns         dtypes                          head               localCheckpoint   registerTempTable   sqlContext             union
+
+
+
+######## CRIANDO UM DATA FRAME COM OS JURO MAIORES QUE 10
+scala> val jurosDF10 = jurosDF.where("valor > 10")
+jurosDF10: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [data: string, valor: string]
+
+scala> jurosDF10.show(10)
++----------+-----+
+|      data|valor|
++----------+-----+
+|01/01/1987|11.00|
+|01/02/1987|19.61|
+|01/03/1987|11.95|
+|01/04/1987|15.30|
+|01/05/1987|24.63|
+|01/06/1987|18.02|
+|01/11/1987|12.92|
+|01/12/1987|14.38|
+|01/01/1988|16.78|
+|01/02/1988|18.35|
++----------+-----+
+only showing top 10 rows
+
+
+####### VOU SALVAR NUM BANCO DE DADOS FELICIANI NO HIVE
+####### SERÁ CRIADA UMA TABELA JUROS_SELIC COM OS DATA FRAME jurosDF10 
+####### O SPARK "CONHECE" O METASTORE DO HIVE, E SALVARÁ NO CAMINHO PADRÃO. /user/hive/warehouse
+scala> jurosDF10.write.saveAsTable("feliciani.tab_juros_selic")
+
+
+####### CRIANDO UM DATA FRAME PARA LER UMA TABELA DIRETAMENTE DO HIVE
+scala> val jurosHiveDF = spark.read.table("feliciani.tab_juros_selic")
+jurosHiveDF: org.apache.spark.sql.DataFrame = [data: string, valor: string]
+
+scala> jurosHiveDF.printSchema
+root
+ |-- data: string (nullable = true)
+ |-- valor: string (nullable = true)
+
+####### DADOS QUE TEM NO HIVE, JUROS MAIORES QUE 10
+scala> jurosHiveDF.show(5)
++----------+-----+
+|      data|valor|
++----------+-----+
+|01/01/1987|11.00|
+|01/02/1987|19.61|
+|01/03/1987|11.95|
+|01/04/1987|15.30|
+|01/05/1987|24.63|
++----------+-----+
+only showing top 5 rows
+
+
+####### DADOS DO DATAFRAME COM TODOS OS JUROS
+scala> jurosDF.show(5)
++----------+-----+
+|      data|valor|
++----------+-----+
+|01/06/1986| 1.27|
+|01/07/1986| 1.95|
+|01/08/1986| 2.57|
+|01/09/1986| 2.94|
+|01/10/1986| 1.96|
++----------+-----+
+only showing top 5 rows
+
+
+####### SALVANDO OS DADOS NO HDFS NO FORMAT PADRÃO PARQUET. UTILIZAR SAVE OU PARQUET É A MESMA COISA.
+####### INFORMAR O CAMINHO, CRIANDO A PASTA DE DESTINO
+scala> jurosHiveDF.write.save("/user/aluno/feliciani/data/save_juros")
+
+scala> :quit
+
+root@spark:/# exit
+
+PS E:\projetos\docker-bigdata> docker exec -it namenode bash
+
+####### O SNAPPY QUER DIZER QUE CRIOU O ARQUIVO PARQUET COMPRIMIDO
+root@namenode:/# hdfs dfs -ls /user/aluno/feliciani/data/save_juros
+Found 2 items
+-rw-r--r--   2 root supergroup          0 2021-03-05 14:02 /user/aluno/feliciani/data/save_juros/_SUCCESS
+-rw-r--r--   2 root supergroup       1419 2021-03-05 14:02 /user/aluno/feliciani/data/save_juros/part-00000-af42ddc5-c2e5-43f9-8a0c-8bddab339d00-c000.snappy.parquet
+
+
+root@namenode:/# hdfs dfs -ls /user/hive/warehouse/feliciani.db/tab_juros_selic
+Found 2 items
+-rw-r--r--   2 root supergroup          0 2021-03-05 13:41 /user/hive/warehouse/feliciani.db/tab_juros_selic/_SUCCESS
+-rw-r--r--   2 root supergroup       1419 2021-03-05 13:41 /user/hive/warehouse/feliciani.db/tab_juros_selic/part-00000-cabddc78-bf7d-4c34-804e-6a1a2f1ee3b9-c000.snappy.parquet
+
+root@namenode:/# exit
+
+PS E:\projetos\docker-bigdata> docker exec -it spark bash
+
+root@spark:/# spark-shell
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+21/03/05 14:40:37 WARN spark.SparkConf: Note that spark.local.dir will be overridden by the value set by the cluster manager (via SPARK_LOCAL_DIRS in mesos/standalone/kubernetes and LOCAL_DIRS in YARN).
+Spark context Web UI available at http://spark:4040
+Spark context available as 'sc' (master = local[*], app id = local-1614955248262).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.4.1
+      /_/
+
+Using Scala version 2.11.12 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_201)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> val jurosHiveHDFS = spark.read.
+csv   format   jdbc   json   load   option   options   orc   parquet   schema   table   text   textFile
+
+######### CRIANDO UM DATA FRAME COM OS DADOS DO HDFS
+scala> val jurosHDFS = spark.read.load("/user/aluno/feliciani/data/save_juros")
+jurosHiveHDFS: org.apache.spark.sql.DataFrame = [data: string, valor: string]
+########## PODERIA SER USADO ASSIM  scala> val jurosHDFS = spark.read.load("hdfs://namenode:8020/user/aluno/feliciani/data/save_juros")
+########## FORA DO HDFS  scala> val jurosHiveHDFS = spark.read.load("file://input/data/juros")
+
+scala> jurosHDFS.printSchema
+root
+ |-- data: string (nullable = true)
+ |-- valor: string (nullable = true)
+
+
+
+scala> jurosHDFS.show(5)
++----------+-----+
+|      data|valor|
++----------+-----+
+|01/01/1987|11.00|
+|01/02/1987|19.61|
+|01/03/1987|11.95|
+|01/04/1987|15.30|
+|01/05/1987|24.63|
++----------+-----+
+only showing top 5 rows
+
+
+scala>
