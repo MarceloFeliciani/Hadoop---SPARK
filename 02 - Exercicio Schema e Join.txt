@@ -1,0 +1,164 @@
+PS E:\projetos\docker-bigdata> wsl -l -v
+  NAME                   STATE           VERSION
+* docker-desktop-data    Running         2
+  docker-desktop         Running         2
+  Ubuntu-20.04           Running         2
+PS E:\projetos\docker-bigdata> docker-compose up -d
+Starting zookeeper    ... done
+Starting database  ... done
+Starting spark        ... done
+Starting namenode  ... done
+Starting hbase-master              ... done
+Starting datanode     ... done
+Starting hive-metastore-postgresql ... done
+Starting hive_metastore            ... done
+Starting hive-server               ... done
+PS E:\projetos\docker-bigdata> docker exec -it spark bash
+root@spark:/# spark-shell
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+21/03/08 18:38:39 WARN spark.SparkConf: Note that spark.local.dir will be overridden by the value set by the cluster manager (via SPARK_LOCAL_DIRS in mesos/standalone/kubernetes and LOCAL_DIRS in YARN).
+Spark context Web UI available at http://spark:4040
+Spark context available as 'sc' (master = local[*], app id = local-1615228723756).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.4.1
+      /_/
+
+Using Scala version 2.11.12 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_201)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> val alunosDF = spark.read.csv("/user/aluno/feliciani/data/escola/alunos.csv")
+alunosDF: org.apache.spark.sql.DataFrame = [_c0: string, _c1: string ... 5 more fields]
+
+scala> alunosDF.printSchema
+root
+ |-- _c0: string (nullable = true)
+ |-- _c1: string (nullable = true)
+ |-- _c2: string (nullable = true)
+ |-- _c3: string (nullable = true)
+ |-- _c4: string (nullable = true)
+ |-- _c5: string (nullable = true)
+ |-- _c6: string (nullable = true)
+
+
+scala> alunosDF.show(5)
++-----------+--------------------+------------+----------------+-----+-----------------+--------+
+|        _c0|                 _c1|         _c2|             _c3|  _c4|              _c5|     _c6|
++-----------+--------------------+------------+----------------+-----+-----------------+--------+
+|id_discente|                nome|ano_ingresso|periodo_ingresso|nivel|id_forma_ingresso|id_curso|
+|      18957|ABELARDO DA SILVA...|        2017|               1|    G|            62151|   76995|
+|        553| ABIEL GODOY MARIANO|        2015|            null|    M|          2081113|    3402|
+|      17977|ABIGAIL ANTUNES S...|        2017|               1|    T|          2081111|  759711|
+|      16613|ABIGAIL FERNANDA ...|        2017|            null|    M|            37350|    1222|
++-----------+--------------------+------------+----------------+-----+-----------------+--------+
+only showing top 5 rows
+
+
+scala> val alunosDF = spark.read.option("header","true").csv("/user/aluno/feliciani/data/escola/alunos.csv")
+alunosDF: org.apache.spark.sql.DataFrame = [id_discente: string, nome: string ... 5 more fields]
+
+scala> alunosDF.printSchema
+root
+ |-- id_discente: string (nullable = true)
+ |-- nome: string (nullable = true)
+ |-- ano_ingresso: string (nullable = true)
+ |-- periodo_ingresso: string (nullable = true)
+ |-- nivel: string (nullable = true)
+ |-- id_forma_ingresso: string (nullable = true)
+ |-- id_curso: string (nullable = true)
+
+
+scala> alunosDF.show(5)
++-----------+--------------------+------------+----------------+-----+-----------------+--------+
+|id_discente|                nome|ano_ingresso|periodo_ingresso|nivel|id_forma_ingresso|id_curso|
++-----------+--------------------+------------+----------------+-----+-----------------+--------+
+|      18957|ABELARDO DA SILVA...|        2017|               1|    G|            62151|   76995|
+|        553| ABIEL GODOY MARIANO|        2015|            null|    M|          2081113|    3402|
+|      17977|ABIGAIL ANTUNES S...|        2017|               1|    T|          2081111|  759711|
+|      16613|ABIGAIL FERNANDA ...|        2017|            null|    M|            37350|    1222|
+|      17398|ABIGAIL JOSIANE R...|        2017|            null|    M|            37350|    5041|
++-----------+--------------------+------------+----------------+-----+-----------------+--------+
+only showing top 5 rows
+
+
+scala> val alunosDF = spark.read.option("header","true").option("inferSchema","true").csv("/user/aluno/feliciani/data/escola/alunos.csv")
+alunosDF: org.apache.spark.sql.DataFrame = [id_discente: int, nome: string ... 5 more fields]
+
+scala> alunosDF.printSchema
+root
+ |-- id_discente: integer (nullable = true)
+ |-- nome: string (nullable = true)
+ |-- ano_ingresso: integer (nullable = true)
+ |-- periodo_ingresso: integer (nullable = true)
+ |-- nivel: string (nullable = true)
+ |-- id_forma_ingresso: integer (nullable = true)
+ |-- id_curso: integer (nullable = true)
+
+
+scala> alunosDF.write.saveAsTable("feliciani.tab_alunos")
+
+scala> val cursosDF = spark.read.option("header","true").option("inferSchema","true").csv("/user/aluno/feliciani/data/escola/cursos.csv")
+cursosDF: org.apache.spark.sql.DataFrame = [id_curso: int, id_unidade: int ... 10 more fields]
+
+scala> val alunos_cursosDF = alunosDF.join(cursosDF,"id_curso")
+alunos_cursosDF: org.apache.spark.sql.DataFrame = [id_curso: int, id_discente: int ... 16 more fields]
+
+scala> alunos_cursosDF.show(10)
++--------+-----------+--------------------+------------+----------------+-----+-----------------+----------+----------+--------------------+-----+----------------------+------------+--------------------+-------------+-----------------+--------------------+-----+
+|id_curso|id_discente|                nome|ano_ingresso|periodo_ingresso|nivel|id_forma_ingresso|id_unidade|    codigo|                nome|nivel|id_modalidade_educacao|id_municipio|id_tipo_oferta_curso|id_area_curso|id_grau_academico|id_eixo_conhecimento|ativo|
++--------+-----------+--------------------+------------+----------------+-----+-----------------+----------+----------+--------------------+-----+----------------------+------------+--------------------+-------------+-----------------+--------------------+-----+
+|   76995|      18957|ABELARDO DA SILVA...|        2017|               1|    G|            62151|       194|      null|LICENCIATURA EM C...|    G|                     1|        8550|                   4|     20000006|          8067070|                null|    1|
+|    3402|        553| ABIEL GODOY MARIANO|        2015|            null|    M|          2081113|       150|  SVTIAGRO|TÉCNICO EM AGROPE...|    M|                     1|        9332|                null|         null|             null|             6264215|    1|
+|  759711|      17977|ABIGAIL ANTUNES S...|        2017|               1|    T|          2081111|       696|   UGTCADM|TÉCNICO EM ADMINI...|    T|                     1|        9431|                null|         null|             null|              171158|    1|
+|    1222|      16613|ABIGAIL FERNANDA ...|        2017|            null|    M|            37350|       349|  PBTIQUIM|TÉCNICO EM QUÍMIC...|    M|                     1|        9091|                null|         null|             null|             6264214|    1|
+|    5041|      17398|ABIGAIL JOSIANE R...|        2017|            null|    M|            37350|       189|  ALTIAGRP|TÉCNICO EM AGROPE...|    M|                     1|        8550|                null|         null|             null|                null|    1|
+| 1913420|      26880|ABIMAEL CHRISTOPF...|        2019|               1|    T|          2081115|       269|SRTSADMEAD|TÉCNICO EM ADMINI...|    T|                     2|        9244|                null|     60000007|             null|              171158|    1|
+|  181097|      28508|   ABNER NUNES PERES|        2019|               1|    G|            37350|       434|      null|BACHARELADO EM AD...|    G|                     1|        8971|                   3|     90000005|                1|                null|    1|
+|   77498|      18693|ACSA PEREIRA RODR...|        2017|               1|    G|            62151|       155|      null|LICENCIATURA EM C...|    G|                     1|        9332|                   3|     20000006|          8067070|                null|    1|
+| 3996007|      28071|ACSA ROBALO DOS S...|        2019|               1|    T|          2081115|       229|   SBTSLOG|TÉCNICO EM LOGÍST...|    T|                     1|        9273|                null|     60000007|             null|              171158|    1|
+| 2399357|      21968|AÇUCENA CARVALHO ...|        2018|               0|    N|          2081113|       428|   JCTPCOM|TÉCNICO EM COMÉRC...|    N|                     1|        8971|                null|     60000007|             null|              171158|    1|
++--------+-----------+--------------------+------------+----------------+-----+-----------------+----------+----------+--------------------+-----+----------------------+------------+--------------------+-------------+-----------------+--------------------+-----+
+only showing top 10 rows
+
+
+scala> alunos_cursosDF.printSchema
+root
+ |-- id_curso: integer (nullable = true)
+ |-- id_discente: integer (nullable = true)
+ |-- nome: string (nullable = true)
+ |-- ano_ingresso: integer (nullable = true)
+ |-- periodo_ingresso: integer (nullable = true)
+ |-- nivel: string (nullable = true)
+ |-- id_forma_ingresso: integer (nullable = true)
+ |-- id_unidade: integer (nullable = true)
+ |-- codigo: string (nullable = true)
+ |-- nome: string (nullable = true)
+ |-- nivel: string (nullable = true)
+ |-- id_modalidade_educacao: integer (nullable = true)
+ |-- id_municipio: integer (nullable = true)
+ |-- id_tipo_oferta_curso: integer (nullable = true)
+ |-- id_area_curso: integer (nullable = true)
+ |-- id_grau_academico: integer (nullable = true)
+ |-- id_eixo_conhecimento: integer (nullable = true)
+ |-- ativo: integer (nullable = true)
+
+
+scala> alunos_cursosDF.count()
+res10: Long = 9954
+
+scala>
+
+
+
+
+
+
+
+
+
+
